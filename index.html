@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Game with Level System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: row;
+        }
+        .game-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            margin-right: 50px;
+        }
+        .stats-panel {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 250px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        .stats, .level-up {
+            font-size: 1.2rem;
+            margin: 10px 0;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .statsPanel button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>RPG Battle</h1>
+        <div class="stats">
+            <p>Player HP: <span id="playerHP">100</span></p>
+            <p>Player Attack: <span id="playerAttack">20</span></p>
+            <p>Player Defense: <span id="playerDefense">10</span></p>
+            <p>Player Level: <span id="playerLevel">1</span></p>
+            <p>Player XP: <span id="playerXP">0</span></p>
+            <p>Player Money: <span id="playerMoney">0</span></p>
+            <p>Monster HP: <span id="monsterHP">50</span></p> <!-- 몬스터 HP 표시 추가 -->
+            <button class="button" id="attackButton">Attack Monster</button>
+            <button class="button" id="healButton">Heal with Money</button> <!-- 체력 회복 버튼 추가 -->
+        </div>
+    </div>
+
+    <div class="stats-panel">
+        <h2>Player Stats</h2>
+        <p>Strength: <span id="playerStrength">20</span></p>
+        <p>Health: <span id="playerCurrentHP">100</span></p>
+        <p>Defense: <span id="playerCurrentDefense">10</span></p>
+        <p>XP Needed for Level Up: <span id="xpNeeded">100</span></p>
+        <p>Remaining Stat Points: <span id="remainingStatPoints">3</span></p> <!-- 남은 스탯 포인트 표시 -->
+        <button class="button" id="openStatsButton">Open Stats</button>
+        <div class="statsPanel" id="statsPanel">
+            <h2>Level Up!</h2>
+            <p>You gained 3 stat points! Choose where to assign them:</p>
+            <button class="button" id="increaseStrength">Increase Strength</button>
+            <button class="button" id="increaseHP">Increase HP</button>
+            <button class="button" id="increaseDefense">Increase Defense</button>
+        </div>
+    </div>
+
+    <div class="result" id="result"></div>
+
+    <script>
+        // 플레이어와 몬스터의 속성 설정
+        let player = {
+            HP: 100,
+            attack: 20,
+            defense: 10,
+            strength: 20,
+            maxHP: 100, // 최대 체력
+            level: 1,
+            XP: 0,
+            money: 0,
+            statPoints: 3, // 초기 스탯 포인트 3개
+        };
+
+        let monster = {
+            HP: 50,
+            attack: 15,
+            defense: 5,
+        };
+
+        // DOM 요소
+        const playerHPEl = document.getElementById("playerHP");
+        const playerAttackEl = document.getElementById("playerAttack");
+        const playerDefenseEl = document.getElementById("playerDefense");
+        const playerLevelEl = document.getElementById("playerLevel");
+        const playerXPEl = document.getElementById("playerXP");
+        const playerMoneyEl = document.getElementById("playerMoney");
+        const attackButton = document.getElementById("attackButton");
+        const healButton = document.getElementById("healButton"); // 체력 회복 버튼
+        const openStatsButton = document.getElementById("openStatsButton");
+        const statsPanel = document.getElementById("statsPanel");
+        const resultEl = document.getElementById("result");
+        const playerStrengthEl = document.getElementById("playerStrength");
+        const playerCurrentHP = document.getElementById("playerCurrentHP");
+        const playerCurrentDefense = document.getElementById("playerCurrentDefense");
+        const xpNeededEl = document.getElementById("xpNeeded");
+        const monsterHPEl = document.getElementById("monsterHP"); // 몬스터 HP 엘리먼트 추가
+        const remainingStatPointsEl = document.getElementById("remainingStatPoints"); // 남은 스탯 포인트 표시
+
+        // 몬스터와의 전투 함수
+        function attack() {
+            if (monster.HP <= 0) {
+                resultEl.textContent = "The monster is already defeated!";
+                return;
+            }
+
+            // 플레이어가 몬스터를 공격
+            let damageToMonster = Math.max(player.attack + player.strength - monster.defense, 1); // 힘 + 공격력
+            monster.HP -= damageToMonster;
+            if (monster.HP <= 0) {
+                monster.HP = 0;
+                resultEl.textContent = "You defeated the monster!";
+                // 몬스터 처치 후 경험치와 돈 획득
+                player.XP += 30; // 경험치 증가 (조금 더 많은 경험치)
+                player.money += 15; // 돈 증가 (조금 더 많은 돈)
+
+                // 레벨업 체크
+                if (player.XP >= 100) {
+                    levelUp();
+                }
+
+                spawnNewMonster(); // 새로운 몬스터 출현
+            } else {
+                resultEl.textContent = "You attacked the monster! It has " + monster.HP + " HP left.";
+            }
+
+            // 몬스터의 반격
+            let damageToPlayer = Math.max(monster.attack - player.defense, 1); // 방어력 감소 후 최소 1의 피해
+            player.HP -= damageToPlayer;
+            if (player.HP <= 0) {
+                player.HP = 0;
+                resultEl.textContent = "You were defeated by the monster! Game Over!";
+                attackButton.disabled = true; // 게임 종료 후 버튼 비활성화
+            }
+
+            // 화면 갱신
+            updateStats();
+        }
+
+        // 체력 회복 함수
+        function heal() {
+            if (player.money >= 20) { // 체력 회복 비용 20
+                const healAmount = Math.floor(player.maxHP * 0.3); // 최대 체력의 30% 회복
+                player.HP = Math.min(player.maxHP, player.HP + healAmount); // 최대 체력을 넘지 않도록 설정
+                player.money -= 20; // 돈 차감
+                resultEl.textContent = "You healed for " + healAmount + " HP!";
+            } else {
+                resultEl.textContent = "Not enough money to heal!";
+            }
+
+            // 화면 갱신
+            updateStats();
+        }
+
+        // 몬스터 다시 생성
+        function spawnNewMonster() {
+            monster.HP = 50 + (player.level * 10) + Math.floor(Math.random() * 50); // 몬스터 체력 증가
+            monster.attack = 15 + (player.level * 5) + Math.floor(Math.random() * 10); // 몬스터 공격력 증가
+            monster.defense = 5 + (player.level * 2) + Math.floor(Math.random() * 5); // 몬스터 방어력 증가
+            resultEl.textContent = "A new monster has appeared!";
+        }
+
+        // 레벨업 함수
+        function levelUp() {
+            player.level++;
+            player.XP = 0; // XP 초기화
+            player.statPoints += 3; // 레벨업 시 3 스탯 포인트 지급
+            playerLevelEl.textContent = player.level;
+            remainingStatPointsEl.textContent = player.statPoints; // 남은 스탯 포인트 갱신
+            statsPanel.style.display = "block"; // 레벨업 창 표시
+            xpNeededEl.textContent = 100 - player.XP;
+        }
+
+        // 스탯 포인트 할당
+        document.getElementById("increaseStrength").addEventListener("click", function() {
+            if (player.statPoints > 0) {
+                player.strength += 5;
+                player.attack += 5;
+                player.statPoints--;
+                updateStats();
+            }
+        });
+
+        document.getElementById("increaseHP").addEventListener("click", function() {
+            if (player.statPoints > 0) {
+                player.maxHP += 20;
+                player.HP = player.maxHP; // 체력 증가 시 최대 체력과 현재 체력 동기화
+                player.statPoints--;
+                updateStats();
+            }
+        });
+
+        document.getElementById("increaseDefense").addEventListener("click", function() {
+            if (player.statPoints > 0) {
+                player.defense += 2;
+                player.statPoints--;
+                updateStats();
+            }
+        });
+
+        // 스탯 갱신 함수
+        function updateStats() {
+            playerHPEl.textContent = player.HP;
+            playerAttackEl.textContent = player.attack;
+            playerDefenseEl.textContent = player.defense;
+            playerLevelEl.textContent = player.level;
+            playerXPEl.textContent = player.XP;
+            playerMoneyEl.textContent = player.money;
+            playerStrengthEl.textContent = player.strength;
+            playerCurrentHP.textContent = player.HP;
+            playerCurrentDefense.textContent = player.defense;
+            xpNeededEl.textContent = 100 - player.XP;
+            monsterHPEl.textContent = monster.HP; // 몬스터 HP 갱신
+            remainingStatPointsEl.textContent = player.statPoints; // 남은 스탯 포인트 표시
+            if (player.statPoints === 0) {
+                statsPanel.style.display = "none"; // 스탯 포인트가 없으면 레벨업 창 숨김
+            }
+        }
+
+        // 스탯 패널 열기
+        openStatsButton.addEventListener("click", function() {
+            statsPanel.style.display = statsPanel.style.display === "block" ? "none" : "block";
+        });
+
+        // 공격 버튼 클릭 이벤트
+        attackButton.addEventListener("click", attack);
+        
+        // 체력 회복 버튼 클릭 이벤트
+        healButton.addEventListener("click", heal);
+
+    </script>
+
+</body>
+</html>
